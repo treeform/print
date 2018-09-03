@@ -14,8 +14,6 @@ func prettyLine*[A](v: A): string
 
 
 func prettyStr(str: string): string =
-  #if str == nil:
-  #  return "nil"
   result = "\""
   for c in str:
     case c
@@ -44,8 +42,6 @@ func prettyNumber*(number: SomeNumber): string = $number
 
 
 func prettyArr[T](arr: seq[T]): string =
-  if arr == nil:
-    return "nil"
   result = "["
   for i, element in arr:
     result &= prettyLine(element)
