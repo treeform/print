@@ -1,21 +1,14 @@
-import macros
-import tables
-import typetraits
-import strutils
+import macros, tables, strutils, json
 
+proc prettyPrint*(x: SomeInteger|SomeFloat|string|bool): string =
+  $x
 
-func prettyLine*(str: string): string
-func prettyLine*(number: SomeNumber): string
-func prettyLine*[T, N](arr: array[T, N]): string
-func prettyLine*[T](seq: seq[T]): string
-func prettyLine*[A, B](table: Table[A, B]): string
-func prettyLine*[A, B](table: TableRef[A, B]): string
-func prettyLine*[A](v: A): string
+proc prettyPrint*(x: enum): string =
+  $x
 
-
-func prettyStr(str: string): string =
+proc prettyPrint*(x: string): string =
   result = "\""
-  for c in str:
+  for c in x:
     case c
     of '\0':
       result &= "\\0"
@@ -37,112 +30,68 @@ func prettyStr(str: string): string =
     else: result &= c
   result &= "\""
 
+proc prettyPrint*(x: cstring): string =
+  "cstring(" & prettyPrint($x) & ")"
 
-func prettyNumber*(number: SomeNumber): string = $number
+proc prettyPrint*(x: JsonNode): string =
+  $x
 
-
-func prettyArr[T](arr: seq[T]): string =
+proc prettyPrint*[N, T](x: array[N, T]): string =
   result = "["
-  for i, element in arr:
-    result &= prettyLine(element)
-    if i != arr.len - 1:
-      result &= ", "
-  result &= "]"
+  for i, value in x:
+    if i != 0: result.add(", ")
+    result.add(prettyPrint(value))
+  result.add("]")
 
+proc prettyPrint*[T](x: seq[T]): string =
+  result = "@["
+  for i, value in x:
+    if i != 0: result.add(", ")
+    result.add(prettyPrint(value))
+  result.add("]")
 
-func prettyTable[A, B](table: TableRef[A, B]): string =
+proc prettyPrint*(x: tuple): string =
+  result = "("
+  var i = 0
+  for _, value in x.field_pairs:
+    if i != 0: result.add(", ")
+    result.add(prettyPrint(value))
+    inc i
+  result.add(")")
+
+func prettyPrint*[A, B](table: TableRef[A, B]): string =
   if table == nil:
     return "nil"
   result = "{"
   var i = 0
   for k, v in table.pairs:
-    result &= prettyLine(k)
+    result &= prettyPrint(k)
     result &= ": "
-    result &= prettyLine(v)
+    result &= prettyPrint(v)
     if i != table.len - 1:
       result &= ", "
     inc i
   result &= "}"
 
-
-func prettyOrderedTable[A, B](table: OrderedTableRef[A, B]): string =
-  result = "{"
+proc prettyObj(x: object): string =
+  result.add "("
   var i = 0
-  for k, v in table.pairs:
-    result &= prettyLine(k)
-    result &= ": "
-    result &= prettyLine(v)
-    if i != table.len - 1:
-      result &= ", "
+  for name, value in x.fieldPairs:
+    if i != 0: result.add(", ")
+    result.add name
+    result.add ": "
+    result.add prettyPrint(value)
     inc i
-  result &= "}"
+  result.add ")"
 
+proc prettyPrint*(x: object): string =
+  $type(x) & prettyObj(x)
 
-func prettyAny*[A](v: A): string =
-  when compiles($v):
-    $v
-  elif compiles(repr($v)):
-    v.type.name & repr(v)
-  elif compiles(v.type.name):
-    v.type.name
+proc prettyPrint*(x: ref object): string =
+  if x.isNil:
+    "nil"
   else:
-    "???"
-
-
-func prettyLine*[A, B](table: OrderedTableRef[A, B]): string = prettyOrderedTable(table)
-func prettyLine*(str: string): string = prettyStr(str)
-func prettyLine*(number: SomeNumber): string = prettyNumber(number)
-func prettyLine*[T, N](arr: array[T, N]): string = prettyArr(arr)
-func prettyLine*[T](seq: seq[T]): string = "@" & prettyArr(seq)
-func prettyLine*[A, B](table: Table[A, B]): string = prettyTable(table) & ".toTable"
-func prettyLine*[A, B](table: TableRef[A, B]): string = prettyTable(table) & ".newTable"
-func prettyLine*[A](v: A): string = prettyAny(v)
-
-
-
-func prettyWrap*(str: string): string =
-  # split things using:
-  # [] () {} and ,,, or :::
-  var indent = ""
-  var data = ""
-  var inString = false
-  var nextEsc = false
-  for i in 0..<str.len:
-    var c = str[i]
-    if inString:
-      data &= c
-      if c == '"' and not nextEsc:
-        inString = false
-      if c == '\\':
-        nextEsc = true
-      else:
-        nextEsc = false
-    elif c in {'{', '['}:
-      indent &= "  "
-      data &= c & "\n" & indent
-    elif c in {'}', ']'}:
-      indent = indent[0..^3]
-      data &= "\n" & indent & c
-    elif c == ',':
-      data &= c & "\n" & indent
-    elif c == '"':
-      data &= c
-      inString = true
-    elif c == ' ':
-      if data[^1] != ' ':
-        data &= c
-    else:
-      data &= c
-  return data
-
-
-func pretty*[A](v: A): string =
-  var oneLine = prettyLine(v)
-  if oneLine.len > 80:
-    return prettyWrap(oneLine)
-  else:
-    return oneLine
-
+    ($typeof(x[])).split(":")[0] & prettyObj(x[])
 
 macro print*(n: varargs[typed]): untyped =
   var command = nnkCommand.newTree(
@@ -155,7 +104,7 @@ macro print*(n: varargs[typed]): untyped =
       command.add(toStrLit(n[i]))
       command.add(newStrLitNode("="))
       var prettyCall = nnkCommand.newTree(
-        newIdentNode("pretty")
+        newIdentNode("prettyPrint")
       )
       prettyCall.add(n[i])
       command.add(prettyCall)
@@ -163,11 +112,4 @@ macro print*(n: varargs[typed]): untyped =
     if i != n.len-1:
       command.add(newStrLitNode(" "))
   return nnkStmtList.newTree(command)
-
-
-when defined(js):
-  # TODO remove workaround: https://github.com/nim-lang/Nim/issues/7499
-  proc toString(x: uint64): cstring {.importcpp.}
-  proc `$`*(x: uint64): string = $(x.toString())
-
 
