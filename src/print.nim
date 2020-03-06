@@ -112,4 +112,3 @@ macro print*(n: varargs[typed]): untyped =
     if i != n.len-1:
       command.add(newStrLitNode(" "))
   return nnkStmtList.newTree(command)
-

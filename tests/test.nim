@@ -93,4 +93,3 @@ print "table", bigTable2
 
 let color = Red
 print "Colors", color
-
