@@ -93,6 +93,24 @@ proc prettyPrint*(x: ref object): string =
   else:
     ($typeof(x[])).split(":")[0] & prettyObj(x[])
 
+proc prettyPrint*[T](x: ref T): string =
+  if x == nil:
+    "nil"
+  else:
+    $type(x[]) & prettyPrint(x[])
+
+proc prettyPrint*[T](x: ptr T): string =
+  if x == nil:
+    "nil"
+  else:
+    $type(x[]) & prettyPrint(x[])
+
+proc prettyPrint*(x: pointer): string =
+  if x == nil:
+    "nil"
+  else:
+    "0x" & toHex(cast[uint64](x))
+
 macro print*(n: varargs[typed]): untyped =
   var command = nnkCommand.newTree(
     newIdentNode("echo")
@@ -112,4 +130,3 @@ macro print*(n: varargs[typed]): untyped =
     if i != n.len-1:
       command.add(newStrLitNode(" "))
   return nnkStmtList.newTree(command)
-
