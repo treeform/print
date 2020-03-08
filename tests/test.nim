@@ -1,8 +1,4 @@
-import tables
-
-import print
-
-
+import tables, print
 
 type Foo = object
   a: string
@@ -16,7 +12,6 @@ type Bar = ref object
 
 type Colors = enum
   Red, White, Blue
-
 
 var g: Bar
 var g2 = Bar(a:"hi", b: @["a", "abc"], c:1234)
@@ -44,7 +39,6 @@ let
   d = @[1, 2, 3]
   d2 = [1, 2, 3]
   f = Foo(a:"hi", b: @["a", "abc"], c:1234)
-
 
 print a, b, c, d, d2, f
 # a=3 b="hi there" c="oh\nthis\0isit!" d=@[1, 2, 3] d2=[1, 2, 3] f=Foo(a: "hi", b: @["a", "abc"], c: 1234)
@@ -90,7 +84,6 @@ echo someThing
 print someThing
 # someThing=SomeObj(id: "xy8", year: 2017)
 
-
 # Really big lines should wrap:
 let bigTable = newTable[string, int]()
 for i in 0..<20:
@@ -102,7 +95,6 @@ let bigTable2 = newTable[string, SomeObj]()
 for i in 0..<20:
   bigTable2["id" & $i] = SomeObj(id: "xy{8}", year: i)
 print "table", bigTable2
-
 
 let color = Red
 print "Colors", color
