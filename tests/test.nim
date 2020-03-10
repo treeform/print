@@ -1,4 +1,4 @@
-import tables, print
+import print, tables
 
 type Foo = object
   a: string
@@ -14,7 +14,7 @@ type Colors = enum
   Red, White, Blue
 
 var g: Bar
-var g2 = Bar(a:"hi", b: @["a", "abc"], c:1234)
+var g2 = Bar(a: "hi", b: @["a", "abc"], c: 1234)
 print g, g2
 
 # proc hi() =
@@ -38,7 +38,7 @@ let
   c = "oh\nthis\0isit!"
   d = @[1, 2, 3]
   d2 = [1, 2, 3]
-  f = Foo(a:"hi", b: @["a", "abc"], c:1234)
+  f = Foo(a: "hi", b: @["a", "abc"], c: 1234)
 
 print a, b, c, d, d2, f
 # a=3 b="hi there" c="oh\nthis\0isit!" d=@[1, 2, 3] d2=[1, 2, 3] f=Foo(a: "hi", b: @["a", "abc"], c: 1234)
