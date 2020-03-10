@@ -1,4 +1,4 @@
-import macros, tables, strutils, json
+import json, macros, strutils, tables
 
 proc prettyPrint*(x: SomeInteger|SomeFloat|string|bool): string =
   $x
