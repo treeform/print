@@ -33,6 +33,9 @@ proc prettyPrint*(x: string): string =
 proc prettyPrint*(x: cstring): string =
   "cstring(" & prettyPrint($x) & ")"
 
+proc prettyPrint*(x: char): string =
+  "'" & $x & "'"
+
 proc prettyPrint*(x: JsonNode): string =
   $x
 
