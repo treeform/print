@@ -1,5 +1,11 @@
 import print, tables
 
+printWidth = 40
+var s = ""
+for i in 0 ..< printWidth:
+  s.add "#"
+echo s
+
 type Foo = object
   a: string
   b: seq[string]
@@ -14,8 +20,15 @@ type Colors = enum
   Red, White, Blue
 
 var g: Bar
-var g2 = Bar(a: "hi", b: @["a", "abc"], c: 1234)
+var g2 = Bar(a: "hi", b: @[], c: 1234)
 print g, g2
+
+g2 = Bar(a: "hi a really really long string", b: @["a", "abc"], c: 1234)
+print g, g2
+
+g2 = Bar(a: "hi", b: @["a", "abc", "a really really long string"], c: 1234)
+print g, g2
+
 
 # proc hi() =
 #   echo "hi"
@@ -80,7 +93,6 @@ type
     id: string
     year: int
 let someThing = SomeObj(id: "xy8", year: 2017)
-echo someThing
 print someThing
 # someThing=SomeObj(id: "xy8", year: 2017)
 
@@ -98,3 +110,31 @@ print "table", bigTable2
 
 let color = Red
 print "Colors", color
+
+# Test circular structures
+block:
+  type Node = ref object
+    data: string
+    next: Node
+  var n = Node(data:"hi")
+  n.next = n
+  print n
+
+block:
+  type Node = ref object
+    data: string
+    next: ptr[Node]
+  var n = Node(data:"hi")
+  n.next = n.addr
+  print n
+
+block:
+  type Node = ref object
+    data: string
+    next: pointer
+  var n = Node(data:"hi")
+  n.next = n.addr
+  print n
+
+var file = open("tests/test.nim")
+print file
