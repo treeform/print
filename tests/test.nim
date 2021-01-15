@@ -45,6 +45,9 @@ print 12
 let whatc = cstring "hi there c string"
 print whatc
 
+print ""
+print ""
+
 let
   a = 3
   b = "hi there"
@@ -55,6 +58,9 @@ let
 
 print a, b, c, d, d2, f
 # a=3 b="hi there" c="oh\nthis\0isit!" d=@[1, 2, 3] d2=[1, 2, 3] f=Foo(a: "hi", b: @["a", "abc"], c: 1234)
+
+print ""
+print ""
 
 let
   p1: ptr int = nil
