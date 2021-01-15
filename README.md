@@ -37,7 +37,7 @@ Screenshot from VS Code:
 
 ![Image of Yaktocat](docs/screenshot.png)
 
-If you are piping to a file it will not detect a terminal and give you plain ascii instead.
+If you are piping to a file it will detect not-a-terminal and give you plain ascii instead.
 
 ## Smart Indention
 
