@@ -1,6 +1,6 @@
 import print, tables
 
-printWidth = 40
+#printWidth = 40
 var s = ""
 for i in 0 ..< printWidth:
   s.add "#"

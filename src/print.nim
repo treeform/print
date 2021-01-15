@@ -1,28 +1,53 @@
-import json, macros, strutils, tables, terminal, sets
+import json, macros, strutils, tables, terminal, sets, re
 
 
 var
   printWidth* = terminalWidth()
   haveSeen: HashSet[uint64]
+  printColors* = stdout.isatty()
+
+proc lenAscii(s: string): int =
+  s.replace(re"\x1B\[[0-9;]*[a-zA-Z]", "").len
+
+# var s1 = "hi there"
+# echo s1.len
+
+# var s2 = ansiForegroundColorCode(fgBlue) & "hi there" & ansiForegroundColorCode(fgDefault)
+# echo s2.len
+# echo s2.lenAscii
+
+# quit()
 
 proc ind(indent: int): string =
   for i in 0 ..< indent:
     result.add "  "
 
+template color(x) =
+  if printColors: result.add ansiForegroundColorCode(x)
+
 proc prettyPrint*(x: SomeInteger, indent=0, multiLine=false): string =
-  $x.int64
+  color(fgCyan)
+  result.add $x.int64
+  color(fgDefault)
 
 proc prettyPrint*(x: SomeFloat, indent=0, multiLine=false): string =
-  $x.float64
+  color(fgCyan)
+  result.add $x.float64
+  color(fgDefault)
 
-proc prettyPrint*(x: string|bool, indent=0, multiLine=false): string =
-  $x
+proc prettyPrint*(x: bool, indent=0, multiLine=false): string =
+  color(fgCyan)
+  result.add $x
+  color(fgDefault)
 
 proc prettyPrint*(x: enum, indent=0, multiLine=false): string =
-  $x
+  color(fgBlue)
+  result.add $x
+  color(fgDefault)
 
 proc prettyPrint*(x: string, indent=0, multiLine=false): string =
-  result = "\""
+  color(fgGreen)
+  result.add "\""
   for c in x:
     case c
     of '\0':
@@ -44,6 +69,7 @@ proc prettyPrint*(x: string, indent=0, multiLine=false): string =
     of '\"': result.add "\\\""
     else: result.add c
   result.add "\""
+  color(fgDefault)
 
 proc prettyPrint*(x: cstring, indent=0, multiLine=false): string =
   "cstring(" & prettyPrint($x) & ")"
@@ -70,17 +96,17 @@ template listLike(x, indent) =
     result.add ind(indent)
 
 proc prettyPrint*[N, T](x: array[N, T], indent=0, multiLine=false): string =
-  result = "["
+  result.add "["
   listLike(x, indent)
   result.add "]"
 
 proc prettyPrint*[T](x: seq[T], indent=0, multiLine=false): string =
-  result = "@["
+  result.add "@["
   listLike(x, indent)
   result.add "]"
 
 proc prettyPrint*(x: tuple, indent=0, multiLine=false): string =
-  result = "("
+  result.add "("
   var i = 0
   for _, value in x.field_pairs:
     if i != 0: result.add(", ")
@@ -106,7 +132,7 @@ template objLike(x, indent, what, keyFn) =
     result.add ":"
     var haveSeenSave = haveSeen
     var e = prettyPrint(value)
-    if e.len + indent * 2 + keyStr.len + 2 > printWidth:
+    if e.lenAscii + indent * 2 + keyStr.lenAscii + 2 > printWidth:
       haveSeen = haveSeenSave
       result.add prettyPrint(value, indent + 1, multiLine=true)
     else:
@@ -117,7 +143,7 @@ template objLike(x, indent, what, keyFn) =
     result.add ind(indent)
 
 proc prettyPrint*[A, B](x: SomeTable[A, B], indent=0, multiLine=false): string =
-  result = "{"
+  result.add "{"
   objLike(x, indent, pairs, prettyPrint)
   result.add "}"
 
@@ -128,47 +154,63 @@ proc prettyPrint*(x: object, indent=0, multiLine=false): string =
   var typeStr = $type(x)
   if ":" in typeStr:
     typeStr = typeStr.split(":")[0]
+  color(fgBlue)
   result.add typeStr
+  color(fgDefault)
   result.add "("
   objLike(x, indent, fieldPairs, `$`)
   result.add ")"
 
 proc prettyPrint*[T](x: ref T, indent=0, multiLine=false): string =
   if x[].justAddr in haveSeen:
-    return "..."
+    color(fgRed)
+    result.add "..."
+    color(fgDefault)
+    return
   else:
     if x[].justAddr != 0:
       haveSeen.incl x[].justAddr
   if x == nil:
-    return "nil"
+    color(fgRed)
+    result.add "nil"
+    color(fgDefault)
   else:
     var haveSeenSave = haveSeen
     result = prettyPrint(x[], indent, multiLine=false)
-    if result.len > printWidth:
+    if result.lenAscii > printWidth:
       haveSeen = haveSeenSave
       result = prettyPrint(x[], indent, multiLine=true)
 
 proc prettyPrint*[T](x: ptr T, indent=0, multiLine=false): string =
   if cast[uint64](x) in haveSeen:
-    return "..."
+    color(fgRed)
+    result.add "..."
+    color(fgDefault)
+    return
   else:
     if x[].justAddr != 0:
       haveSeen.incl cast[uint64](x)
   if x == nil:
-    "nil"
+    color(fgRed)
+    result.add "nil"
+    color(fgDefault)
   else:
-    prettyPrint(x[])
+    result.add prettyPrint(x[])
 
 proc prettyPrint*(x: pointer, indent=0, multiLine=false): string =
   if x == nil:
-    "nil"
+    color(fgRed)
+    result.add "nil"
+    color(fgDefault)
   else:
-    "0x" & toHex(cast[uint64](x))
+    color(fgRed)
+    result.add "0x" & toHex(cast[uint64](x))
+    color(fgDefault)
 
 proc prettyPrintMain*[T](x: T): string =
   haveSeen.clear()
   result = prettyPrint(x)
-  if result.len > printWidth:
+  if result.lenAscii > printWidth:
     haveSeen.clear()
     result = prettyPrint(x, indent=0, multiLine=true)
 
