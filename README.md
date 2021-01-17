@@ -1,6 +1,8 @@
 # Print - a better echo.
 
-Use `print` how you would use `echo` for print-debugging, it prints objects the "nim way" with syntax highlighting. Even with refs, pointers, or cycles!
+`nimble install print`
+
+Use `print` the same way you would use `echo` for print-debugging. It prints objects the "Nim way" with syntax highlighting. Even with refs, pointers, or cycles!
 
 ```nim
 import print
@@ -12,9 +14,9 @@ print a
 a = 3
 ```
 
-## The "nim way"
+## The "Nim way"
 
-It prints data structures in a way you would create them in nim source code. Ideally you can take what it prints out and just copy paste that into code again and it should compile in many of the cases.
+It prints data structures in the same way you would create them in Nim source code. Ideally you can take what it prints out and just copy paste that into code again and it should compile in many cases.
 
 ```nim
 let
@@ -39,7 +41,7 @@ Screenshot from VS Code:
 
 If you are piping to a file it will detect not-a-terminal and give you plain ascii instead.
 
-## Smart Indention
+## Smart indention
 
 It will try to print out everything in one line, but it if it does not fit it will create indentation levels. Max width is based on current terminal max width.
 
