@@ -1,13 +1,30 @@
-import json, macros, strutils, tables, terminal, sets, re
+import json, macros, strutils, tables, sets
 
+when not defined(js):
+  import terminal, re
 
-var
-  printWidth* = terminalWidth()
-  haveSeen: HashSet[uint64]
-  printColors* = stdout.isatty()
+  var
+    printWidth* = terminalWidth()
+    haveSeen: HashSet[uint64]
+    printColors* = stdout.isatty()
 
-proc lenAscii(s: string): int =
-  s.replace(re"\x1B\[[0-9;]*[a-zA-Z]", "").len
+  proc lenAscii(s: string): int =
+    s.replace(re"\x1B\[[0-9;]*[a-zA-Z]", "").len
+
+  template color(x) =
+    if printColors: result.add ansiForegroundColorCode(x)
+
+else:
+  var
+    printWidth* = 140
+    haveSeen: HashSet[uint64]
+    printColors* = false
+
+  proc lenAscii(s: string): int =
+    s.len
+
+  template color(x) =
+    discard
 
 # var s1 = "hi there"
 # echo s1.len
@@ -22,8 +39,7 @@ proc ind(indent: int): string =
   for i in 0 ..< indent:
     result.add "  "
 
-template color(x) =
-  if printColors: result.add ansiForegroundColorCode(x)
+
 
 proc prettyPrint*(x: SomeInteger, indent=0, multiLine=false): string =
   color(fgCyan)
