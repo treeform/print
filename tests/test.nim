@@ -144,3 +144,6 @@ block:
 
 var file = open("tests/test.nim")
 print file
+
+var ua: ptr UncheckedArray[int]
+print ua

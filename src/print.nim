@@ -26,20 +26,9 @@ else:
   template color(x) =
     discard
 
-# var s1 = "hi there"
-# echo s1.len
-
-# var s2 = ansiForegroundColorCode(fgBlue) & "hi there" & ansiForegroundColorCode(fgDefault)
-# echo s2.len
-# echo s2.lenAscii
-
-# quit()
-
 proc ind(indent: int): string =
   for i in 0 ..< indent:
     result.add "  "
-
-
 
 proc prettyPrint*(x: SomeInteger, indent=0, multiLine=false): string =
   color(fgCyan)
@@ -222,6 +211,9 @@ proc prettyPrint*(x: pointer, indent=0, multiLine=false): string =
     color(fgRed)
     result.add "0x" & toHex(cast[uint64](x))
     color(fgDefault)
+
+proc prettyPrint*[T](x: UncheckedArray[T], indent=0, multiLine=false): string =
+  prettyPrint(cast[pointer](x), indent, multiLine)
 
 proc prettyPrintMain*[T](x: T): string =
   haveSeen.clear()
