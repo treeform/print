@@ -52,6 +52,12 @@ type
 template justAddr(x): uint64 =
   cast[uint64](x.unsafeAddr)
 
+macro `$`(a: proc): untyped =
+  let procdef = a.getTypeInst
+  echo procdef.treeRepr
+  procdef.insert 0, ident($a)
+  newLit(procdef.repr)
+
 proc escapeString*(v: string): string =
   result.add '"'
   for c in v:
