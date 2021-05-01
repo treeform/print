@@ -34,6 +34,10 @@ proc hi() =
 print hi
 #  hi=proc (){.gcsafe, locks: 0.}
 
+proc hi2(a: int, s:string): bool =
+  echo "hi"
+print hi2
+
 let what = "\0\tworld\n\r"
 print "hello", what
 # hello what="\0\tworld\n\r"

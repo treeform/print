@@ -31,6 +31,7 @@ type
     nkTopLevel
     nkName
     nkNumber
+    nkProc
     nkString
     nkChar
     nkPointer
@@ -53,10 +54,9 @@ template justAddr(x): uint64 =
   cast[uint64](x.unsafeAddr)
 
 macro `$`(a: proc): untyped =
-  let procdef = a.getTypeInst
-  echo procdef.treeRepr
-  procdef.insert 0, ident($a)
-  newLit(procdef.repr)
+  let procDef = a.getTypeInst
+  procDef.insert 0, ident($a)
+  newLit(procDef.repr)
 
 proc escapeString*(v: string): string =
   result.add '"'
@@ -105,7 +105,7 @@ proc newNode*(x: char): Node =
   Node(kind: nkChar, value: $x)
 
 proc newNode*(x: proc): Node =
-  Node(kind: nkChar, value: "proc(?)")
+  Node(kind: nkProc, value: $x)
 
 proc newNode*[T](x: seq[T]): Node =
   var nodes: seq[Node]
@@ -168,7 +168,7 @@ proc newNode*(x: enum): Node =
 
 proc textLine(node: Node): string =
   case node.kind:
-    of nkNumber, nkNil, nkRepeat, nkPointer:
+    of nkNumber, nkNil, nkRepeat, nkPointer, nkProc:
       result.add node.value
     of nkString, nkChar:
       result.add node.value.escapeString()
@@ -234,6 +234,8 @@ proc printNode*(node: Node, indent: int) =
       printStr(fgBlue, node.value)
     of nkRepeat, nkNil, nkPointer:
       printStr(fgRed, node.value)
+    of nkProc:
+      printStr(fgMagenta, node.value)
     of nkString:
       printStr(fgGreen, node.value.escapeString())
     of nkChar:
