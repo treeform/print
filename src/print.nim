@@ -139,11 +139,14 @@ proc newNode*[T: object](x: T): Node =
 
 proc newNode*[T](x: ref T): Node =
   if x != nil:
-    if x[].justAddr in haveSeen:
-      Node(kind: nkRepeat, value:"...")
+    when not defined(js):
+      if x[].justAddr in haveSeen:
+        Node(kind: nkRepeat, value:"...")
+      else:
+        if x[].justAddr != 0:
+          haveSeen.incl x[].justAddr
+        newNode(x[])
     else:
-      if x[].justAddr != 0:
-        haveSeen.incl x[].justAddr
       newNode(x[])
   else:
     Node(kind: nkNil, value:"nil")
