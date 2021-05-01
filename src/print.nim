@@ -1,4 +1,4 @@
-import json, macros, strutils, tables, sets, jsony
+import json, macros, strutils, tables, sets
 
 when defined(js):
   var
@@ -51,6 +51,20 @@ type
 
 template justAddr(x): uint64 =
   cast[uint64](x.unsafeAddr)
+
+proc escapeString*(v: string): string =
+  result.add '"'
+  for c in v:
+    case c:
+    of '\\': result.add r"\\"
+    of '\b': result.add r"\b"
+    of '\f': result.add r"\f"
+    of '\n': result.add r"\n"
+    of '\r': result.add r"\r"
+    of '\t': result.add r"\t"
+    else:
+      result.add c
+  result.add '"'
 
 proc newSupportNode*(value: string): Node =
   Node(kind: nkSupport, value: value)
@@ -151,7 +165,7 @@ proc textLine(node: Node): string =
     of nkNumber, nkNil, nkRepeat, nkPointer:
       result.add node.value
     of nkString, nkChar:
-      result.add node.value.toJson()
+      result.add node.value.escapeString()
     of nkSeq, nkArray:
       if node.kind == nkSeq:
         result.add "@"
@@ -215,9 +229,9 @@ proc printNode*(node: Node, indent: int) =
     of nkRepeat, nkNil, nkPointer:
       printStr(fgRed, node.value)
     of nkString:
-      printStr(fgGreen, node.value.toJson())
+      printStr(fgGreen, node.value.escapeString())
     of nkChar:
-      printStr(fgGreen, "'" & node.value.toJson()[1..^2] & "'")
+      printStr(fgGreen, "'" & node.value.escapeString()[1..^2] & "'")
     of nkSeq, nkArray:
       if node.kind == nkSeq:
         printStr "@"
