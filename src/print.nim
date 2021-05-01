@@ -1,243 +1,326 @@
-import json, macros, strutils, tables, sets
+import json, macros, strutils, tables, sets, jsony
 
-when not defined(js):
-  import terminal, re
-
+when defined(js):
+  var
+    printWidth* = 120
+    printColors* = false
+    haveSeen: HashSet[uint64]
+    line: string
+  type
+    ForegroundColor = enum  ## terminal's foreground colors
+      fgBlack = 30,         ## black
+      fgRed,                ## red
+      fgGreen,              ## green
+      fgYellow,             ## yellow
+      fgBlue,               ## blue
+      fgMagenta,            ## magenta
+      fgCyan,               ## cyan
+      fgWhite,              ## white
+      fg8Bit,               ## 256-color (not supported, see ``enableTrueColors`` instead.)
+      fgDefault             ## default terminal foreground color
+else:
+  import terminal
   var
     printWidth* = terminalWidth()
-    haveSeen: HashSet[uint64]
     printColors* = stdout.isatty()
-
-  proc lenAscii(s: string): int =
-    s.replace(re"\x1B\[[0-9;]*[a-zA-Z]", "").len
-
-  template color(x) =
-    if printColors: result.add ansiForegroundColorCode(x)
-
-else:
-  var
-    printWidth* = 140
     haveSeen: HashSet[uint64]
-    printColors* = false
 
-  proc lenAscii(s: string): int =
-    s.len
+type
+  NodeKind = enum
+    nkSupport
+    nkTopLevel
+    nkName
+    nkNumber
+    nkString
+    nkChar
+    nkPointer
+    nkSeq
+    nkArray
+    nkTuple
+    nkTable
+    nkObject
+    nkTopPair
+    nkFieldPair
+    nkNil
+    nkRepeat
 
-  template color(x) =
-    discard
-
-proc ind(indent: int): string =
-  for i in 0 ..< indent:
-    result.add "  "
-
-proc prettyPrint*(x: SomeInteger, indent=0, multiLine=false): string =
-  color(fgCyan)
-  result.add $x.int64
-  color(fgDefault)
-
-proc prettyPrint*(x: SomeFloat, indent=0, multiLine=false): string =
-  color(fgCyan)
-  result.add $x.float64
-  color(fgDefault)
-
-proc prettyPrint*(x: bool, indent=0, multiLine=false): string =
-  color(fgCyan)
-  result.add $x
-  color(fgDefault)
-
-proc prettyPrint*(x: enum, indent=0, multiLine=false): string =
-  color(fgBlue)
-  result.add $x
-  color(fgDefault)
-
-proc prettyPrint*(x: string, indent=0, multiLine=false): string =
-  color(fgGreen)
-  result.add "\""
-  for c in x:
-    case c
-    of '\0':
-      result.add "\\0"
-    of '\n':
-      result.add "\\n"
-    of '\r':
-      result.add "\\r"
-    of '\t':
-      result.add "\\t"
-    of '\1'..'\8', '\11'..'\12', '\14'..'\31', '\127'..'\255':
-      result.add "\\x"
-      const HexChars = "0123456789ABCDEF"
-      let n = ord(c)
-      result.add HexChars[int((n and 0xF0) shr 4)]
-      result.add HexChars[int(n and 0xF)]
-    of '\\': result.add "\\\\"
-    of '\'': result.add "\\'"
-    of '\"': result.add "\\\""
-    else: result.add c
-  result.add "\""
-  color(fgDefault)
-
-proc prettyPrint*(x: cstring, indent=0, multiLine=false): string =
-  "cstring(" & prettyPrint($x) & ")"
-
-proc prettyPrint*(x: char, indent=0, multiLine=false): string =
-  "'" & $x & "'"
-
-proc prettyPrint*(x: JsonNode, indent=0, multiLine=false): string =
-  $x
-
-template listLike(x, indent) =
-  if multiLine: result.add "\n"
-  for i, value in x:
-    if i != 0:
-      result.add(",")
-      if multiLine:
-        result.add "\n"
-      else:
-        result.add " "
-    if multiLine: result.add ind(indent + 1)
-    result.add prettyPrint(value, indent + 1)
-  if multiLine:
-    result.add "\n"
-    result.add ind(indent)
-
-proc prettyPrint*[N, T](x: array[N, T], indent=0, multiLine=false): string =
-  result.add "["
-  listLike(x, indent)
-  result.add "]"
-
-proc prettyPrint*[T](x: seq[T], indent=0, multiLine=false): string =
-  result.add "@["
-  listLike(x, indent)
-  result.add "]"
-
-proc prettyPrint*(x: tuple, indent=0, multiLine=false): string =
-  result.add "("
-  var i = 0
-  for _, value in x.field_pairs:
-    if i != 0: result.add(", ")
-    result.add(prettyPrint(value))
-    inc i
-  result.add(")")
-
-type SomeTable[A, B] = Table[A, B]|OrderedTable[A, B]
-
-template objLike(x, indent, what, keyFn) =
-  if multiLine: result.add "\n"
-  var i = 0
-  for key, value in x.what:
-    if i != 0:
-      result.add(",")
-      if multiLine:
-        result.add "\n"
-      else:
-        result.add " "
-    if multiLine: result.add ind(indent + 1)
-    var keyStr = keyFn(key)
-    result.add keyStr
-    result.add ":"
-    var haveSeenSave = haveSeen
-    var e = prettyPrint(value)
-    if e.lenAscii + indent * 2 + keyStr.lenAscii + 2 > printWidth:
-      haveSeen = haveSeenSave
-      result.add prettyPrint(value, indent + 1, multiLine=true)
-    else:
-      result.add e
-    inc i
-  if multiLine:
-    result.add "\n"
-    result.add ind(indent)
-
-proc prettyPrint*[A, B](x: SomeTable[A, B], indent=0, multiLine=false): string =
-  result.add "{"
-  objLike(x, indent, pairs, prettyPrint)
-  result.add "}"
+  Node = ref object
+    kind: NodeKind
+    value: string
+    nodes: seq[Node]
 
 template justAddr(x): uint64 =
   cast[uint64](x.unsafeAddr)
 
-proc prettyPrint*(x: object, indent=0, multiLine=false): string =
-  var typeStr = $type(x)
-  if ":" in typeStr:
-    typeStr = typeStr.split(":")[0]
-  color(fgBlue)
-  result.add typeStr
-  color(fgDefault)
-  result.add "("
-  objLike(x, indent, fieldPairs, `$`)
-  result.add ")"
+proc newSupportNode*(value: string): Node =
+  Node(kind: nkSupport, value: value)
 
-proc prettyPrint*[T](x: ref T, indent=0, multiLine=false): string =
-  if x[].justAddr in haveSeen:
-    color(fgRed)
-    result.add "..."
-    color(fgDefault)
-    return
+proc newNameNode*(name: string): Node =
+  Node(kind: nkName, value: name)
+
+proc newTopPairNode*(k, v: Node): Node =
+  Node(kind: nkTopPair, nodes: @[k, v])
+
+proc newFieldPairNode*(k, v: Node): Node =
+  Node(kind: nkFieldPair, nodes: @[k, v])
+
+#proc newNode[K, V](t: Table[K, V]): Node
+proc newNode*[T](x: seq[T]): Node
+proc newNode*[N, T](x: array[N, T]): Node
+proc newNode*(x: SomeNumber): Node
+proc newNode*(x: string): Node
+proc newNode*(x: char): Node
+#proc newNode[T: object](s: T): Node
+
+proc newNode*(x: SomeNumber): Node =
+  Node(kind: nkNumber, value: $x)
+
+proc newNode*(x: string): Node =
+  Node(kind: nkString, value: x)
+
+proc newNode*(x: cstring): Node =
+  Node(kind: nkString, value: $x)
+
+proc newNode*(x: char): Node =
+  Node(kind: nkChar, value: $x)
+
+proc newNode*(x: proc): Node =
+  Node(kind: nkChar, value: "proc(?)")
+
+proc newNode*[T](x: seq[T]): Node =
+  var nodes: seq[Node]
+  for e in x:
+    nodes.add(newNode(e))
+  Node(kind: nkSeq, nodes:nodes)
+
+proc newNode*[N, T](x: array[N, T]): Node =
+  var nodes: seq[Node]
+  for e in x:
+    nodes.add(newNode(e))
+  Node(kind: nkArray, nodes:nodes)
+
+proc newNode*[K, V](x: Table[K, V]): Node =
+  var nodes: seq[Node]
+  for k, v in x.pairs():
+   nodes.add(newFieldPairNode(newNode(k), newNode(v)))
+  Node(kind: nkTable, nodes:nodes)
+
+proc newNode*[T: tuple](x: T): Node =
+  var nodes: seq[Node]
+  for _, e in x.fieldPairs:
+    nodes.add(newNode(e))
+  Node(kind: nkTuple, nodes:nodes)
+
+proc newNode*[T: object](x: T): Node =
+  var nodes: seq[Node]
+  for n, e in x.fieldPairs:
+    nodes.add(newFieldPairNode(newNameNode(n), newNode(e)))
+  Node(kind: nkObject, value: $type(x), nodes:nodes)
+
+proc newNode*[T](x: ref T): Node =
+  if x != nil:
+    if x[].justAddr in haveSeen:
+      Node(kind: nkRepeat, value:"...")
+    else:
+      if x[].justAddr != 0:
+        haveSeen.incl x[].justAddr
+      newNode(x[])
   else:
-    if x[].justAddr != 0:
-      haveSeen.incl x[].justAddr
-  if x == nil:
-    color(fgRed)
-    result.add "nil"
-    color(fgDefault)
+    Node(kind: nkNil, value:"nil")
+
+proc newNode*[T](x: ptr T): Node =
+  if x != nil:
+    newNode(x[])
   else:
-    var haveSeenSave = haveSeen
-    result = prettyPrint(x[], indent, multiLine=false)
-    if result.lenAscii > printWidth:
-      haveSeen = haveSeenSave
-      result = prettyPrint(x[], indent, multiLine=true)
+    Node(kind: nkNil, value:"nil")
 
-proc prettyPrint*[T](x: ptr T, indent=0, multiLine=false): string =
-  if cast[uint64](x) in haveSeen:
-    color(fgRed)
-    result.add "..."
-    color(fgDefault)
-    return
+proc newNode*(x: pointer): Node =
+  if x != nil:
+    Node(kind: nkPointer, value:"0x" & toHex(cast[uint64](x)))
   else:
-    if x[].justAddr != 0:
-      haveSeen.incl cast[uint64](x)
-  if x == nil:
-    color(fgRed)
-    result.add "nil"
-    color(fgDefault)
+    Node(kind: nkNil, value:"nil")
+
+proc newNode*[T](x: ptr UncheckedArray[T]): Node =
+  newNode(cast[pointer](x))
+
+proc newNode*(x: enum): Node =
+  newNode($x)
+
+proc textLine(node: Node): string =
+  case node.kind:
+    of nkNumber, nkNil, nkRepeat, nkPointer:
+      result.add node.value
+    of nkString, nkChar:
+      result.add node.value.toJson()
+    of nkSeq, nkArray:
+      if node.kind == nkSeq:
+        result.add "@"
+      result.add "["
+      for i, e in node.nodes:
+        if i != 0:
+          result.add ", "
+        result.add textLine(e)
+      result.add "]"
+    of nkTable:
+      result.add "{"
+      for i, e in node.nodes:
+        if i != 0:
+          result.add ", "
+        result.add textLine(e)
+      result.add "}"
+    of nkObject, nkTuple:
+      result.add node.value
+      result.add "("
+      for i, e in node.nodes:
+        if i != 0:
+          result.add ", "
+        result.add textLine(e)
+      result.add ")"
+    of nkTopLevel:
+      result.add node.value
+      for i, e in node.nodes:
+        if i != 0:
+          result.add " "
+        result.add textLine(e)
+    of nkTopPair:
+      result.add textLine(node.nodes[0])
+      result.add "="
+      result.add textLine(node.nodes[1])
+    of nkFieldPair:
+      result.add textLine(node.nodes[0])
+      result.add ": "
+      result.add textLine(node.nodes[1])
+    else:
+      result.add node.value
+
+proc printStr(s: string) =
+  when defined(js):
+    line.add(s)
   else:
-    result.add prettyPrint(x[])
+    stdout.write(s)
 
-proc prettyPrint*(x: pointer, indent=0, multiLine=false): string =
-  if x == nil:
-    color(fgRed)
-    result.add "nil"
-    color(fgDefault)
+proc printStr(c: ForeGroundColor, s: string) =
+  when defined(js):
+    line.add(s)
   else:
-    color(fgRed)
-    result.add "0x" & toHex(cast[uint64](x))
-    color(fgDefault)
+    stdout.styledWrite(c, s)
 
-proc prettyPrint*[T](x: UncheckedArray[T], indent=0, multiLine=false): string =
-  prettyPrint(cast[pointer](x), indent, multiLine)
+proc printNode*(node: Node, indent: int) =
 
-proc prettyPrintMain*[T](x: T): string =
-  haveSeen.clear()
-  result = prettyPrint(x)
-  if result.lenAscii > printWidth:
-    haveSeen.clear()
-    result = prettyPrint(x, indent=0, multiLine=true)
+  let wrap = textLine(node).len + indent >= printWidth
 
-macro print*(n: varargs[typed]): untyped =
+  case node.kind:
+    of nkNumber:
+      printStr(fgBlue, node.value)
+    of nkRepeat, nkNil, nkPointer:
+      printStr(fgRed, node.value)
+    of nkString:
+      printStr(fgGreen, node.value.toJson())
+    of nkChar:
+      printStr(fgGreen, "'" & node.value.toJson()[1..^2] & "'")
+    of nkSeq, nkArray:
+      if node.kind == nkSeq:
+        printStr "@"
+      if wrap:
+        printStr "[\n"
+        for i, e in node.nodes:
+          printStr "  ".repeat(indent + 1)
+          printNode(e, indent + 1)
+          if i != node.nodes.len - 1:
+            printStr ",\n"
+        printStr "\n"
+        printStr "  ".repeat(indent)
+        printStr "]"
+      else:
+        printStr "["
+        for i, e in node.nodes:
+          if i != 0:
+            printStr ", "
+          printNode(e, 0)
+        printStr "]"
+    of nkTable, nkObject, nkTuple:
+      if node.kind in [nkObject, nkTuple]:
+        printStr(fgCyan, node.value)
+        printStr "("
+      else:
+        printStr "{"
+      if wrap:
+        printStr "\n"
+        for i, e in node.nodes:
+          printNode(e, indent + 1)
+          if i != node.nodes.len - 1:
+            printStr ",\n"
+        printStr "\n"
+        printStr "  ".repeat(indent)
+      else:
+        for i, e in node.nodes:
+          if i != 0:
+            printStr ", "
+          printNode(e, 0)
+      if node.kind in [nkObject, nkTuple]:
+        printStr ")"
+      else:
+        printStr "}"
+
+    of nkTopLevel:
+      if wrap:
+        for i, e in node.nodes:
+          printNode(e, 0)
+          if i != node.nodes.len - 1:
+            printStr "\n"
+      else:
+        for i, e in node.nodes:
+          if i != 0:
+            printStr " "
+          printNode(e, 0)
+      printStr "\n"
+
+    of nkTopPair:
+      printNode(node.nodes[0], 0)
+      printStr "="
+      printNode(node.nodes[1], 0)
+
+    of nkFieldPair:
+      printStr "  ".repeat(indent)
+      printNode(node.nodes[0], indent)
+      printStr ": "
+      printNode(node.nodes[1], indent)
+
+    else:
+      printStr(node.value)
+
+proc printNodes*(s: varargs[Node]) =
+  var nodes: seq[Node]
+  for e in s:
+    nodes.add(e)
+  var node = Node(kind: nkTopLevel, nodes: nodes)
+  printNode(node, 0)
+  when defined(js):
+    echo line[0 .. ^2]
+    line = ""
+
+macro print*(n: varargs[untyped]): untyped =
   var command = nnkCommand.newTree(
-    newIdentNode("echo")
+    newIdentNode("printNodes")
   )
   for i in 0..n.len-1:
     if n[i].kind == nnkStrLit:
-      command.add(n[i])
-    else:
-      command.add(newStrLitNode(n[i].repr))
-      command.add(newStrLitNode("="))
-      var prettyCall = nnkCommand.newTree(
-        newIdentNode("prettyPrintMain")
+      command.add nnkCommand.newTree(
+        newIdentNode("newSupportNode"),
+        n[i]
       )
-      prettyCall.add(n[i])
-      command.add(prettyCall)
+    else:
+      command.add nnkCommand.newTree(
+        newIdentNode("newTopPairNode"),
+        nnkCommand.newTree(
+          newIdentNode("newNameNode"),
+          newStrLitNode(n[i].repr)
+        ),
+        nnkCommand.newTree(
+          newIdentNode("newNode"),
+          n[i]
+        )
+      )
 
-    if i != n.len-1:
-      command.add(newStrLitNode(" "))
-  return nnkStmtList.newTree(command)
+  var s = nnkStmtList.newTree(command)
+  return s

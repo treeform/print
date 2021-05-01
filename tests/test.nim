@@ -1,4 +1,4 @@
-import print, tables
+import ../src/print, tables
 
 #printWidth = 40
 var s = ""
@@ -29,10 +29,9 @@ print g, g2
 g2 = Bar(a: "hi", b: @["a", "abc", "a really really long string"], c: 1234)
 print g, g2
 
-
-# proc hi() =
-#   echo "hi"
-# print hi
+proc hi() =
+  echo "hi"
+print hi
 #  hi=proc (){.gcsafe, locks: 0.}
 
 let what = "\0\tworld\n\r"
@@ -45,9 +44,6 @@ print 12
 let whatc = cstring "hi there c string"
 print whatc
 
-print ""
-print ""
-
 let
   a = 3
   b = "hi there"
@@ -58,9 +54,6 @@ let
 
 print a, b, c, d, d2, f
 # a=3 b="hi there" c="oh\nthis\0isit!" d=@[1, 2, 3] d2=[1, 2, 3] f=Foo(a: "hi", b: @["a", "abc"], c: 1234)
-
-print ""
-print ""
 
 let
   p1: ptr int = nil
@@ -85,9 +78,8 @@ let smallSeq = @[1, 2, 3]
 print "seq", smallSeq
 # seq smallSeq=@[1, 2, 3]
 
-#TODO: just Table is broken
-#let smallTable = {1: "one", 2: "two"}.toTable
-#print "table", smallTable
+let smallTable = {1: "one", 2: "two"}.toTable
+print "table", smallTable
 # table smallTable={1: "one", 2: "two"}
 
 let smallTableRef = {1: "one", 2: "two"}.newTable
@@ -104,13 +96,13 @@ print someThing
 
 # Really big lines should wrap:
 let bigTable = newTable[string, int]()
-for i in 0..<20:
+for i in 0..<10:
   bigTable["id" & $i] = i
 print "table", bigTable
 
-# Relly Nested Stuff
+# Really Nested Stuff
 let bigTable2 = newTable[string, SomeObj]()
-for i in 0..<20:
+for i in 0..<10:
   bigTable2["id" & $i] = SomeObj(id: "xy{8}", year: i)
 print "table", bigTable2
 
