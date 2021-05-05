@@ -34,6 +34,7 @@ type
     nkProc
     nkString
     nkChar
+    nkBool
     nkPointer
     nkSeq
     nkArray
@@ -94,6 +95,9 @@ proc newNode*(x: char): Node
 
 proc newNode*(x: SomeNumber): Node =
   Node(kind: nkNumber, value: $x)
+
+proc newNode*(x: bool): Node =
+  Node(kind: nkBool, value: $x)
 
 proc newNode*(x: string): Node =
   Node(kind: nkString, value: x)
@@ -171,7 +175,7 @@ proc newNode*(x: enum): Node =
 
 proc textLine(node: Node): string =
   case node.kind:
-    of nkNumber, nkNil, nkRepeat, nkPointer, nkProc:
+    of nkNumber, nkNil, nkRepeat, nkPointer, nkProc, nkBool:
       result.add node.value
     of nkString, nkChar:
       result.add node.value.escapeString()
@@ -233,7 +237,7 @@ proc printNode*(node: Node, indent: int) =
   let wrap = textLine(node).len + indent >= printWidth
 
   case node.kind:
-    of nkNumber:
+    of nkNumber, nkBool:
       printStr(fgBlue, node.value)
     of nkRepeat, nkNil, nkPointer:
       printStr(fgRed, node.value)
