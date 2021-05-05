@@ -6,6 +6,13 @@ for i in 0 ..< printWidth:
   s.add "#"
 echo s
 
+block:
+  let
+    a = true
+    b = 1
+    c = 1.34
+  print a, b, c
+
 type Foo = object
   a: string
   b: seq[string]
