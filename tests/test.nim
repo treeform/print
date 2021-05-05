@@ -11,7 +11,8 @@ block:
     a = true
     b = 1
     c = 1.34
-  print a, b, c
+    d = "one"
+  print a, b, c, d
 
 type Foo = object
   a: string
