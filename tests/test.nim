@@ -1,4 +1,4 @@
-import ../src/print, tables
+import ../src/print, tables, sets
 
 #printWidth = 40
 var s = ""
@@ -142,3 +142,27 @@ when not defined(js):
 
   var ua: ptr UncheckedArray[int]
   print ua
+
+block:
+  type
+    Mob = object
+      name: string
+      hp: int
+      x: float
+      y: float
+      mode: char
+  var mobs = @[
+    Mob(name:"Boyar Dens", hp: 120, x:1.2, y:2.33333, mode:'a'),
+    Mob(name:"Kozar", hp: 20, x:21.23, y:2.3),
+    Mob(name:"Goffer", hp: 25, x:31.2, y:2.3),
+    Mob(name:"Hexer the Great", hp: 0, x:41.2, y:122.3, mode:'b'),
+  ]
+  printTable mobs
+  printTable mobs, Plain
+
+block:
+  var hs: HashSet[uint64]
+  hs.incl(1.uint64)
+  hs.incl(12.uint64)
+  hs.incl(123.uint64)
+  print hs
