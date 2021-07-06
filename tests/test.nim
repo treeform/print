@@ -166,3 +166,7 @@ block:
   hs.incl(12.uint64)
   hs.incl(123.uint64)
   print hs
+
+block:
+  var a = @[1, 2, 3]
+  print type(a)

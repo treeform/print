@@ -32,6 +32,7 @@ type
     nkName
     nkNumber
     nkProc
+    nkType
     nkString
     nkChar
     nkBool
@@ -113,6 +114,9 @@ proc newNode*(x: char): Node =
 proc newNode*(x: proc): Node =
   Node(kind: nkProc, value: $x)
 
+proc newNode*(x: type): Node =
+  Node(kind: nkType, value: $x)
+
 proc newNode*[T](x: seq[T]): Node =
   var nodes: seq[Node]
   for e in x:
@@ -183,7 +187,7 @@ proc newNode*(x: enum): Node =
 
 proc textLine(node: Node): string =
   case node.kind:
-    of nkNumber, nkNil, nkRepeat, nkPointer, nkProc, nkBool:
+    of nkNumber, nkNil, nkRepeat, nkPointer, nkProc, nkBool, nkType:
       result.add node.value
     of nkString, nkChar:
       result.add node.value.escapeString()
@@ -249,7 +253,7 @@ proc printNode*(node: Node, indent: int) =
       printStr(fgBlue, node.value)
     of nkRepeat, nkNil, nkPointer:
       printStr(fgRed, node.value)
-    of nkProc:
+    of nkProc, nkType:
       printStr(fgMagenta, node.value)
     of nkString:
       printStr(fgGreen, node.value.escapeString())
