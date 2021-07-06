@@ -1,4 +1,4 @@
-import json, macros, strutils, tables, sets
+import json, macros, strutils, tables, sets, math
 
 when defined(js):
   var
@@ -60,10 +60,11 @@ macro `$`(a: proc): untyped =
   procDef.insert 0, ident($a)
   newLit(procDef.repr)
 
-proc escapeString*(v: string): string =
-  result.add '"'
+proc escapeString*(v: string, q = "\""): string =
+  result.add q
   for c in v:
     case c:
+    of '\0': result.add r"\0"
     of '\\': result.add r"\\"
     of '\b': result.add r"\b"
     of '\f': result.add r"\f"
@@ -74,7 +75,10 @@ proc escapeString*(v: string): string =
       if ord(c) > 128:
         result.add "\\x" & toHex(ord(c), 2).toLowerAscii()
       result.add c
-  result.add '"'
+  result.add q
+
+proc escapeChar(v: string): string =
+  escapeString(v, "'")
 
 proc newSupportNode*(value: string): Node =
   Node(kind: nkSupport, value: value)
@@ -395,7 +399,13 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
       row: seq[string]
       col = 0
     for k, v in item.fieldPairs:
-      var text = $v
+      let text =
+        when type(v) is char:
+          escapeChar($v)
+        elif type(v) is string:
+          v.escapeString("")
+        else:
+          $v
       row.add(text)
       widths[col] = max(text.len, widths[col])
       inc col
@@ -446,14 +456,11 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
       for k, v in item.fieldPairs:
         let text = table[i][col]
         if number[col]:
-          for j in text.len ..< widths[col]:
-            printStr(" ")
+          printStr(" ".repeat(widths[col] - text.len))
           printStr(fgBlue, text)
         else:
           printStr(fgGreen, text)
-          if not number[col]:
-            for j in text.len ..< widths[col]:
-              printStr(" ")
+          printStr(" ".repeat(widths[col] - text.len))
         printStr(" │ ")
         inc col
       printStr("\n")
@@ -495,3 +502,57 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
         printStr("   ")
         inc col
       printStr("\n")
+
+proc printBarChart*[N:SomeNumber](data: seq[(string, N)]) =
+  ## prints a bar chart like this:
+  ## zpu: ▇▇▇▇▇▇▇▇▇ 20.45
+  ## cpu: ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 70.00
+  ## gpu: ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 45.56
+  const fill8th = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"]
+  proc maximize(a: var SomeNumber, v: SomeNumber) = a = max(a, v)
+  proc minimize(a: var SomeNumber, v: SomeNumber) = a = min(a, v)
+  proc frac(a: SomeFloat): SomeFloat = a - floor(a)
+  var
+    maxKeyWidth = 0
+    minNumber: N = 0
+    maxNumber: N = 0
+    maxLabel = 0
+
+  for (k, v) in data:
+    maximize(maxKeyWidth, k.len)
+    maximize(maxLabel, ($v).len)
+    minimize(minNumber, v)
+    maximize(maxNumber, v)
+
+  var
+    chartWidth = printWidth - maxKeyWidth - 3 - maxLabel
+  if minNumber != 0:
+    chartWidth -= maxLabel + 1
+  var
+    barScale = chartWidth.float / (maxNumber.float - minNumber.float)
+    preZero = (-minNumber.float * barScale).ceil.int
+
+  for (k, v) in data:
+    var line = ""
+    printStr " ".repeat(maxKeyWidth - k.len)
+    printStr fgGreen, k
+    printStr ": "
+
+    let barWidth = v.float * barScale
+    if minNumber == 0:
+      printStr fill8th[8].repeat(floor(barWidth).int)
+      printStr fill8th[(frac(barWidth) * 8).int]
+      printStr " "
+      printStr fgBlue, $v
+    else:
+      if barWidth >= 0:
+        printStr " ".repeat(preZero + maxLabel)
+        printStr fill8th[8].repeat(floor(barWidth).int)
+        printStr " "
+        printStr fgBlue, $v
+      else:
+        printStr " ".repeat(preZero + barWidth.int + maxLabel - ($v).len)
+        printStr fgBlue, $v
+        printStr " "
+        printStr fill8th[8].repeat(floor(-barWidth).int - 1)
+    printStr "\n"

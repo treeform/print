@@ -153,7 +153,7 @@ block:
       mode: char
   var mobs = @[
     Mob(name:"Boyar Dens", hp: 120, x:1.2, y:2.33333, mode:'a'),
-    Mob(name:"Kozar", hp: 20, x:21.23, y:2.3),
+    Mob(name:"Kozar\0", hp: 20, x:21.23, y:2.3),
     Mob(name:"Goffer", hp: 25, x:31.2, y:2.3),
     Mob(name:"Hexer the Great", hp: 0, x:41.2, y:122.3, mode:'b'),
   ]
@@ -170,3 +170,31 @@ block:
 block:
   var a = @[1, 2, 3]
   print type(a)
+
+block:
+  printBarChart(@[
+    ("2018", 200.45),
+    ("2017", 110.45),
+    ("2016", 77.89),
+    ("2015", 66.20 ),
+    ("2014", 760.00),
+    ("2013", 450.56),
+  ])
+  print "second bar"
+  printBarChart(@[
+    ("2018", -200),
+    ("2017", -100),
+    ("2016", 0),
+    ("2015", 100),
+    ("2014", 200),
+    ("2013", 300),
+  ])
+  print "second bar"
+  printBarChart(@[
+    ("2018", -200.45),
+    ("2017", 110.45),
+    ("2016", -177.89),
+    ("2015", -66.20 ),
+    ("2014", 760.00),
+    ("2013", 450.56),
+  ])
