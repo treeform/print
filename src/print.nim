@@ -70,6 +70,8 @@ proc escapeString*(v: string): string =
     of '\r': result.add r"\r"
     of '\t': result.add r"\t"
     else:
+      if ord(c) > 128:
+        result.add "\\x" & toHex(ord(c), 2).toLowerAscii()
       result.add c
   result.add '"'
 
@@ -128,6 +130,12 @@ proc newNode*[K, V](x: Table[K, V]): Node =
   for k, v in x.pairs():
    nodes.add(newFieldPairNode(newNode(k), newNode(v)))
   Node(kind: nkTable, nodes:nodes)
+
+proc newNode*[T](x: HashSet[T]): Node =
+  var nodes: seq[Node]
+  for e in x:
+    nodes.add(newNode(e))
+  Node(kind: nkArray, nodes:nodes)
 
 proc newNode*[T: tuple](x: T): Node =
   var nodes: seq[Node]
@@ -319,6 +327,7 @@ proc printNode*(node: Node, indent: int) =
       printStr(node.value)
 
 proc printNodes*(s: varargs[Node]) =
+  haveSeen.clear()
   var nodes: seq[Node]
   for e in s:
     nodes.add(e)
@@ -353,3 +362,132 @@ macro print*(n: varargs[untyped]): untyped =
 
   var s = nnkStmtList.newTree(command)
   return s
+
+template fieldPairs*[T: ref object](x: T): untyped =
+  x[].fieldPairs
+
+type TableStyle* = enum
+  Fancy
+  Plain
+
+proc printTable*[T](arr: seq[T], style = Fancy) =
+  ## Given a list of items prints them as a table.
+
+  # Turns items into table props.
+  var
+    header: seq[string]
+    widths: seq[int]
+    number: seq[bool]
+    table: seq[seq[string]]
+
+  var headerItem: T
+  for k, v in headerItem.fieldPairs:
+    header.add(k)
+    widths.add(len(k))
+    number.add(type(v) is SomeNumber)
+
+  for i, item in arr:
+    var
+      row: seq[string]
+      col = 0
+    for k, v in item.fieldPairs:
+      var text = $v
+      row.add(text)
+      widths[col] = max(text.len, widths[col])
+      inc col
+    table.add(row)
+
+  case style:
+  of Fancy:
+    # Print header.
+    printStr("╭─")
+    for col in 0 ..< header.len:
+      for j in 0 ..< widths[col]:
+        printStr("─")
+      if col != header.len - 1:
+        printStr("─┬─")
+      else:
+        printStr("─╮")
+    printStr("\n")
+
+    # Print header.
+    printStr("│ ")
+    for col in 0 ..< header.len:
+      if number[col]:
+        for j in header[col].len ..< widths[col]:
+          printStr(" ")
+        printStr(header[col])
+      else:
+        printStr(header[col])
+        for j in header[col].len ..< widths[col]:
+          printStr(" ")
+      printStr(" │ ")
+    printStr("\n")
+
+    # Print header divider.
+    printStr("├─")
+    for col in 0 ..< header.len:
+      for j in 0 ..< widths[col]:
+        printStr("─")
+      if col != header.len - 1:
+        printStr("─┼─")
+      else:
+        printStr("─┤")
+    printStr("\n")
+
+    # Print the values
+    for i, item in arr:
+      var col = 0
+      printStr("│ ")
+      for k, v in item.fieldPairs:
+        let text = table[i][col]
+        if number[col]:
+          for j in text.len ..< widths[col]:
+            printStr(" ")
+          printStr(fgBlue, text)
+        else:
+          printStr(fgGreen, text)
+          if not number[col]:
+            for j in text.len ..< widths[col]:
+              printStr(" ")
+        printStr(" │ ")
+        inc col
+      printStr("\n")
+
+    # Print footer.
+    printStr("╰─")
+    for col in 0 ..< header.len:
+      for j in 0 ..< widths[col]:
+        printStr("─")
+      if col != header.len - 1:
+        printStr("─┴─")
+      else:
+        printStr("─╯")
+    printStr("\n")
+
+  of Plain:
+     # Print header.
+    for col in 0 ..< header.len:
+      printStr(header[col])
+      for j in header[col].len ..< widths[col]:
+        printStr(" ")
+      printStr("   ")
+    printStr("\n")
+
+    # Print the values
+    for i, item in arr:
+      var col = 0
+      for k, v in item.fieldPairs:
+        let text = table[i][col]
+        if number[col]:
+          for j in text.len ..< widths[col]:
+            printStr(" ")
+          printStr(fgBlue, text)
+        else:
+          printStr(fgGreen, text)
+          if not number[col]:
+            for j in text.len ..< widths[col]:
+              printStr(" ")
+        printStr("   ")
+        inc col
+      printStr("\n")
