@@ -378,6 +378,10 @@ macro print*(n: varargs[untyped]): untyped =
   var s = nnkStmtList.newTree(command)
   return s
 
+template debugPrint*(n: varargs[untyped]): untyped =
+  {.cast(gcSafe).}:
+    print(n)
+
 type TableStyle* = enum
   Fancy
   Plain
