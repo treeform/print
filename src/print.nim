@@ -52,6 +52,13 @@ type
     value: string
     nodes: seq[Node]
 
+# Work around for both jsony and print needs this.
+template fieldPairs2*(x: untyped): untyped =
+  when compiles(x[]):
+    x[].fieldPairs
+  else:
+    x.fieldPairs
+
 template justAddr(x): uint64 =
   cast[uint64](x.unsafeAddr)
 
@@ -147,13 +154,13 @@ proc newNode*[T](x: HashSet[T]): Node =
 
 proc newNode*[T: tuple](x: T): Node =
   var nodes: seq[Node]
-  for _, e in x.fieldPairs:
+  for _, e in x.fieldPairs2:
     nodes.add(newNode(e))
   Node(kind: nkTuple, nodes:nodes)
 
 proc newNode*[T: object](x: T): Node =
   var nodes: seq[Node]
-  for n, e in x.fieldPairs:
+  for n, e in x.fieldPairs2:
     nodes.add(newFieldPairNode(newNameNode(n), newNode(e)))
   Node(kind: nkObject, value: $type(x), nodes:nodes)
 
@@ -371,9 +378,6 @@ macro print*(n: varargs[untyped]): untyped =
   var s = nnkStmtList.newTree(command)
   return s
 
-template fieldPairs*[T: ref object](x: T): untyped =
-  x[].fieldPairs
-
 type TableStyle* = enum
   Fancy
   Plain
@@ -389,7 +393,7 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
     table: seq[seq[string]]
 
   var headerItem: T
-  for k, v in headerItem.fieldPairs:
+  for k, v in headerItem.fieldPairs2:
     header.add(k)
     widths.add(len(k))
     number.add(type(v) is SomeNumber)
@@ -398,7 +402,7 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
     var
       row: seq[string]
       col = 0
-    for k, v in item.fieldPairs:
+    for k, v in item.fieldPairs2:
       let text =
         when type(v) is char:
           escapeChar($v)
@@ -453,7 +457,7 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
     for i, item in arr:
       var col = 0
       printStr("│ ")
-      for k, v in item.fieldPairs:
+      for k, v in item.fieldPairs2:
         let text = table[i][col]
         if number[col]:
           printStr(" ".repeat(widths[col] - text.len))
@@ -488,7 +492,7 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
     # Print the values
     for i, item in arr:
       var col = 0
-      for k, v in item.fieldPairs:
+      for k, v in item.fieldPairs2:
         let text = table[i][col]
         if number[col]:
           for j in text.len ..< widths[col]:
