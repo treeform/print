@@ -533,7 +533,7 @@ proc printBarChart*[N:SomeNumber](data: seq[(string, N)]) =
     maximize(maxNumber, v)
 
   var
-    chartWidth = printWidth - maxKeyWidth - 3 - maxLabel
+    chartWidth = printWidth - maxKeyWidth - 3 - maxLabel - 2
   if minNumber != 0:
     chartWidth -= maxLabel + 1
   var
