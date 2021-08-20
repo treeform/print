@@ -513,10 +513,10 @@ proc printTable*[T](arr: seq[T], style = Fancy) =
 
 proc printBarChart*[N:SomeNumber](data: seq[(string, N)]) =
   ## prints a bar chart like this:
-  ## zpu: ▇▇▇▇▇▇▇▇▇ 20.45
-  ## cpu: ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 70.00
-  ## gpu: ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇ 45.56
-  const fill8th = [" ", "▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"]
+  ## zpu: ######### 20.45
+  ## cpu: ################################################# 70.00
+  ## gpu: ########################### 45.56
+  const fillChar = "#"
   proc maximize(a: var SomeNumber, v: SomeNumber) = a = max(a, v)
   proc minimize(a: var SomeNumber, v: SomeNumber) = a = min(a, v)
   proc frac(a: SomeFloat): SomeFloat = a - floor(a)
@@ -548,19 +548,18 @@ proc printBarChart*[N:SomeNumber](data: seq[(string, N)]) =
 
     let barWidth = v.float * barScale
     if minNumber == 0:
-      printStr fill8th[8].repeat(floor(barWidth).int)
-      printStr fill8th[(frac(barWidth) * 8).int]
+      printStr fillChar.repeat(floor(barWidth).int)
       printStr " "
       printStr fgBlue, $v
     else:
       if barWidth >= 0:
         printStr " ".repeat(preZero + maxLabel)
-        printStr fill8th[8].repeat(floor(barWidth).int)
+        printStr fillChar.repeat(floor(barWidth).int)
         printStr " "
         printStr fgBlue, $v
       else:
         printStr " ".repeat(preZero + barWidth.int + maxLabel - ($v).len)
         printStr fgBlue, $v
         printStr " "
-        printStr fill8th[8].repeat(floor(-barWidth).int - 1)
+        printStr fillChar.repeat(floor(-barWidth).int - 1)
     printStr "\n"
