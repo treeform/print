@@ -379,7 +379,7 @@ macro print*(n: varargs[untyped]): untyped =
   return s
 
 template debugPrint*(n: varargs[untyped]): untyped =
-  {.cast(gcSafe).}:
+  {.cast(gcSafe), cast(noSideEffect).}:
     print(n)
 
 type TableStyle* = enum
