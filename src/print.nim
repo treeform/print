@@ -1,4 +1,4 @@
-import json, macros, strutils, tables, sets, math
+import json, macros, strutils, tables, sets, math, unicode
 
 when defined(js):
   var
@@ -120,6 +120,9 @@ proc newNode*(x: cstring): Node =
   Node(kind: nkString, value: $x)
 
 proc newNode*(x: char): Node =
+  Node(kind: nkChar, value: $x)
+
+proc newNode*(x: Rune): Node =
   Node(kind: nkChar, value: $x)
 
 proc newNode*(x: proc): Node =
