@@ -1,5 +1,7 @@
 # Print - a better echo.
 
+![Github Actions](https://github.com/treeform/print/workflows/Github%20Actions/badge.svg)
+
 `nimble install print`
 
 Use `print` the same way you would use `echo` for print-debugging. It prints objects the "Nim way" with syntax highlighting. Even with refs, pointers, or cycles!
