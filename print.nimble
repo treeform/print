@@ -1,7 +1,7 @@
 # Package
 
 version       = "1.0.1"
-author        = "treeform"
+author        = "Andre von Houck"
 description   = "Print is a set of pretty print macros, useful for print-debugging."
 license       = "MIT"
 srcDir        = "src"
