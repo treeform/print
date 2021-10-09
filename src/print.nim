@@ -256,7 +256,10 @@ proc printStr(c: ForeGroundColor, s: string) =
   when defined(js):
     line.add(s)
   else:
-    stdout.styledWrite(c, s)
+    if printColors:
+      stdout.styledWrite(c, s)
+    else:
+      stdout.write(s)
 
 proc printNode*(node: Node, indent: int) =
 
