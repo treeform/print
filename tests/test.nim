@@ -198,3 +198,10 @@ block:
     ("2014", 760.00),
     ("2013", 450.56),
   ])
+
+block:
+  type Dollar = distinct int
+  let a = 5.Dollar
+  print a
+  let b = @[4.Dollar]
+  print b

@@ -1,4 +1,4 @@
-import json, macros, strutils, tables, sets, math, unicode
+import json, macros, strutils, tables, sets, math, unicode, typetraits
 
 when defined(js):
   var
@@ -105,6 +105,7 @@ proc newNode*[N, T](x: array[N, T]): Node
 proc newNode*(x: SomeNumber): Node
 proc newNode*(x: string): Node
 proc newNode*(x: char): Node
+proc newNodeFromBaseType*[T](x: T): Node
 #proc newNode[T: object](s: T): Node
 
 proc newNode*(x: SomeNumber): Node =
@@ -134,37 +135,37 @@ proc newNode*(x: type): Node =
 proc newNode*[T](x: seq[T]): Node =
   var nodes: seq[Node]
   for e in x:
-    nodes.add(newNode(e))
+    nodes.add(newNodeFromBaseType(e))
   Node(kind: nkSeq, nodes:nodes)
 
 proc newNode*[N, T](x: array[N, T]): Node =
   var nodes: seq[Node]
   for e in x:
-    nodes.add(newNode(e))
+    nodes.add(newNodeFromBaseType(e))
   Node(kind: nkArray, nodes:nodes)
 
 proc newNode*[K, V](x: Table[K, V]): Node =
   var nodes: seq[Node]
   for k, v in x.pairs():
-   nodes.add(newFieldPairNode(newNode(k), newNode(v)))
+   nodes.add(newFieldPairNode(newNodeFromBaseType(k), newNodeFromBaseType(v)))
   Node(kind: nkTable, nodes:nodes)
 
 proc newNode*[T](x: HashSet[T]): Node =
   var nodes: seq[Node]
   for e in x:
-    nodes.add(newNode(e))
+    nodes.add(newNodeFromBaseType(e))
   Node(kind: nkArray, nodes:nodes)
 
 proc newNode*[T: tuple](x: T): Node =
   var nodes: seq[Node]
   for _, e in x.fieldPairs2:
-    nodes.add(newNode(e))
+    nodes.add(newNodeFromBaseType(e))
   Node(kind: nkTuple, nodes:nodes)
 
 proc newNode*[T: object](x: T): Node =
   var nodes: seq[Node]
   for n, e in x.fieldPairs2:
-    nodes.add(newFieldPairNode(newNameNode(n), newNode(e)))
+    nodes.add(newFieldPairNode(newNameNode(n), newNodeFromBaseType(e)))
   Node(kind: nkObject, value: $type(x), nodes:nodes)
 
 proc newNode*[T](x: ref T): Node =
@@ -175,15 +176,15 @@ proc newNode*[T](x: ref T): Node =
       else:
         if x[].justAddr != 0:
           haveSeen.incl x[].justAddr
-        newNode(x[])
+        newNodeFromBaseType(x[])
     else:
-      newNode(x[])
+      newNodeFromBaseType(x[])
   else:
     Node(kind: nkNil, value:"nil")
 
 proc newNode*[T](x: ptr T): Node =
   if x != nil:
-    newNode(x[])
+    newNodeFromBaseType(x[])
   else:
     Node(kind: nkNil, value:"nil")
 
@@ -194,10 +195,16 @@ proc newNode*(x: pointer): Node =
     Node(kind: nkNil, value:"nil")
 
 proc newNode*[T](x: ptr UncheckedArray[T]): Node =
-  newNode(cast[pointer](x))
+  newNodeFromBaseType(cast[pointer](x))
 
 proc newNode*(x: enum): Node =
   newNode($x)
+
+proc newNodeFromBaseType*[T](x: T): Node =
+  newNode(x.distinctBase(recursive = true))
+
+proc newNodeFromBaseType*(x: type): Node =
+  newNode(x)
 
 proc textLine(node: Node): string =
   case node.kind:
@@ -373,7 +380,7 @@ macro print*(n: varargs[untyped]): untyped =
           newStrLitNode(n[i].repr)
         ),
         nnkCommand.newTree(
-          newIdentNode("newNode"),
+          newIdentNode("newNodeFromBaseType"),
           n[i]
         )
       )
