@@ -127,7 +127,10 @@ proc newNode*(x: Rune): Node =
   Node(kind: nkChar, value: $x)
 
 proc newNode*(x: proc): Node =
-  Node(kind: nkProc, value: $x)
+  when compiles($x):
+    Node(kind: nkProc, value: $x)
+  else:
+    Node(kind: nkProc, value: x.type.name)
 
 proc newNode*(x: type): Node =
   Node(kind: nkType, value: $x)

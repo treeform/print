@@ -209,3 +209,8 @@ block:
 block:
   let c = {2, 3}
   print c
+
+block:
+  type MyProc = proc()
+  let a: MyProc = proc() = discard
+  print a
