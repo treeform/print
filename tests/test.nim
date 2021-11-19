@@ -198,3 +198,19 @@ block:
     ("2014", 760.00),
     ("2013", 450.56),
   ])
+
+block:
+  type Dollar = distinct int
+  let a = 5.Dollar
+  print a
+  let b = @[4.Dollar]
+  print b
+
+block:
+  let c = {2, 3}
+  print c
+
+block:
+  type MyProc = proc()
+  let a: MyProc = proc() = discard
+  print a
