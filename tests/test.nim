@@ -205,3 +205,7 @@ block:
   print a
   let b = @[4.Dollar]
   print b
+
+block:
+  let c = {2, 3}
+  print c

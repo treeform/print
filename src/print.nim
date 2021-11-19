@@ -150,7 +150,7 @@ proc newNode*[K, V](x: Table[K, V]): Node =
    nodes.add(newFieldPairNode(newNodeFromBaseType(k), newNodeFromBaseType(v)))
   Node(kind: nkTable, nodes:nodes)
 
-proc newNode*[T](x: HashSet[T]): Node =
+proc newNode*[T](x: HashSet[T] | set[T]): Node =
   var nodes: seq[Node]
   for e in x:
     nodes.add(newNodeFromBaseType(e))
