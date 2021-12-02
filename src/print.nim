@@ -155,7 +155,7 @@ proc newNode*[K, V](x: Table[K, V]): Node =
 
 proc newNode*[T](x: HashSet[T] | set[T]): Node =
   var nodes: seq[Node]
-  for e in x:
+  for e in x.items():
     nodes.add(newNodeFromBaseType(e))
   Node(kind: nkArray, nodes:nodes)
 
