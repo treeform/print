@@ -109,7 +109,7 @@ proc newNodeFromBaseType*[T](x: T): Node
 #proc newNode[T: object](s: T): Node
 
 proc newNode*(x: SomeNumber): Node =
-  Node(kind: nkNumber, value: $x)
+  Node(kind: nkNumber, value: system.`$`(x))
 
 proc newNode*(x: bool): Node =
   Node(kind: nkBool, value: $x)
