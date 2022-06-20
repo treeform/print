@@ -368,7 +368,7 @@ proc printNodes*(s: varargs[Node]) =
     echo line[0 .. ^2]
     line = ""
 
-macro print*(n: varargs[untyped]): untyped =
+macro rawPrint*(n: varargs[untyped]): untyped =
   var command = nnkCommand.newTree(
     newIdentNode("printNodes")
   )
@@ -394,9 +394,12 @@ macro print*(n: varargs[untyped]): untyped =
   var s = nnkStmtList.newTree(command)
   return s
 
-template debugPrint*(n: varargs[untyped]): untyped =
+template print*(n: varargs[untyped]): untyped =
   {.cast(gcSafe), cast(noSideEffect).}:
-    print(n)
+    try:
+      rawPrint(n)
+    except:
+      discard
 
 type TableStyle* = enum
   Fancy
