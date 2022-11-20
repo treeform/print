@@ -79,7 +79,7 @@ proc escapeString*(v: string, q = "\""): string =
     of '\r': result.add r"\r"
     of '\t': result.add r"\t"
     else:
-      if ord(c) > 128:
+      if ord(c) > 128 and not defined(multibyte):
         result.add "\\x" & toHex(ord(c), 2).toLowerAscii()
       result.add c
   result.add q
