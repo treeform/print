@@ -102,13 +102,14 @@ print n
 ```
 ```nim
 n=Node(data: "hi", next: ...)
+```
 
 ## Character debugging!
 By default print will display non-ascii characters with their bytes, useful for debugging unexpected outputs with non printable characters: 
 ```nim
 ("��� Page not found     ", 404)=("\xef�\xbf�\xbd�\xef�\xbf�\xbd�\xef�\xbf�\xbd� Page not found     ", 404)
 ```
-However this can be disabled by using -d:multibyte
+However this can be disabled by using -d:multibyte:
 ```nim
-("��� Page not found     ", 404)=("��� Page not found     ", 404).
+("��� Page not found     ", 404)=("��� Page not found     ", 404)
 ```
