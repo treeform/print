@@ -110,5 +110,5 @@ By default print will display non-ascii characters with their bytes, useful for 
 ```
 However this can be disabled by using -d:multibyte
 ```nim
-("��� Page not found     ", 404)=("��� Page not found     ", 404)
+("��� Page not found     ", 404)=("��� Page not found     ", 404).
 ```
