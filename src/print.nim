@@ -109,7 +109,7 @@ proc newNodeFromBaseType*[T](x: T): Node
 #proc newNode[T: object](s: T): Node
 
 proc newNode*(x: SomeNumber): Node =
-  Node(kind: nkNumber, value: $x)
+  Node(kind: nkNumber, value: system.`$`(x))
 
 proc newNode*(x: bool): Node =
   Node(kind: nkBool, value: $x)
@@ -155,7 +155,7 @@ proc newNode*[K, V](x: Table[K, V]): Node =
 
 proc newNode*[T](x: HashSet[T] | set[T]): Node =
   var nodes: seq[Node]
-  for e in x:
+  for e in x.items():
     nodes.add(newNodeFromBaseType(e))
   Node(kind: nkArray, nodes:nodes)
 
@@ -368,7 +368,7 @@ proc printNodes*(s: varargs[Node]) =
     echo line[0 .. ^2]
     line = ""
 
-macro print*(n: varargs[untyped]): untyped =
+macro rawPrint*(n: varargs[untyped]): untyped =
   var command = nnkCommand.newTree(
     newIdentNode("printNodes")
   )
@@ -394,9 +394,12 @@ macro print*(n: varargs[untyped]): untyped =
   var s = nnkStmtList.newTree(command)
   return s
 
-template debugPrint*(n: varargs[untyped]): untyped =
+template print*(n: varargs[untyped]): untyped =
   {.cast(gcSafe), cast(noSideEffect).}:
-    print(n)
+    try:
+      rawPrint(n)
+    except:
+      discard
 
 type TableStyle* = enum
   Fancy
