@@ -1,0 +1,38 @@
+printWidth	print.html#printWidth	print: printWidth	
+printColors	print.html#printColors	print: printColors	
+fieldPairs2	print.html#fieldPairs2.t,untyped	print: fieldPairs2(x: untyped): untyped	
+escapeString	print.html#escapeString,string,string	print: escapeString(v: string; q = &quot;\&quot;&quot;): string	
+newSupportNode	print.html#newSupportNode,string	print: newSupportNode(value: string): Node	
+newNameNode	print.html#newNameNode,string	print: newNameNode(name: string): Node	
+newTopPairNode	print.html#newTopPairNode,Node,Node	print: newTopPairNode(k, v: Node): Node	
+newFieldPairNode	print.html#newFieldPairNode,Node,Node	print: newFieldPairNode(k, v: Node): Node	
+newNode	print.html#newNode,SomeNumber	print: newNode(x: SomeNumber): Node	
+newNode	print.html#newNode,bool	print: newNode(x: bool): Node	
+newNode	print.html#newNode,string	print: newNode(x: string): Node	
+newNode	print.html#newNode,cstring	print: newNode(x: cstring): Node	
+newNode	print.html#newNode,char	print: newNode(x: char): Node	
+newNode	print.html#newNode,Rune	print: newNode(x: Rune): Node	
+newNode	print.html#newNode,proc	print: newNode(x: proc): Node	
+newNode	print.html#newNode,type	print: newNode(x: type): Node	
+newNode	print.html#newNode,seq[T]	print: newNode[T](x: seq[T]): Node	
+newNode	print.html#newNode,array[N,T]	print: newNode[N, T](x: array[N, T]): Node	
+newNode	print.html#newNode,Table[K,V]	print: newNode[K, V](x: Table[K, V]): Node	
+newNode	print.html#newNode	print: newNode[T](x: HashSet[T] | set[T]): Node	
+newNode	print.html#newNode,T	print: newNode[T: tuple](x: T): Node	
+newNode	print.html#newNode,T_2	print: newNode[T: object](x: T): Node	
+newNode	print.html#newNode,ref.T	print: newNode[T](x: ref T): Node	
+newNode	print.html#newNode,ptr.T	print: newNode[T](x: ptr T): Node	
+newNode	print.html#newNode,pointer	print: newNode(x: pointer): Node	
+newNode	print.html#newNode,ptr.UncheckedArray[T]	print: newNode[T](x: ptr UncheckedArray[T]): Node	
+newNode	print.html#newNode_2	print: newNode(x: enum): Node	
+newNodeFromBaseType	print.html#newNodeFromBaseType,T	print: newNodeFromBaseType[T](x: T): Node	
+newNodeFromBaseType	print.html#newNodeFromBaseType,type	print: newNodeFromBaseType(x: type): Node	
+printNode	print.html#printNode,Node,int	print: printNode(node: Node; indent: int)	
+printNodes	print.html#printNodes,varargs[Node]	print: printNodes(s: varargs[Node])	
+rawPrint	print.html#rawPrint.m,varargs[untyped]	print: rawPrint(n: varargs[untyped]): untyped	
+print	print.html#print.t,varargs[untyped]	print: print(n: varargs[untyped]): untyped	
+Fancy	print.html#Fancy	TableStyle.Fancy	
+Plain	print.html#Plain	TableStyle.Plain	
+TableStyle	print.html#TableStyle	print: TableStyle	
+printTable	print.html#printTable,seq[T]	print: printTable[T](arr: seq[T]; style = Fancy)	
+printBarChart	print.html#printBarChart,seq[]	print: printBarChart[N: SomeNumber](data: seq[(string, N)])	
